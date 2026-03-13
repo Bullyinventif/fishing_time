@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fishing Time</title>
+<style>
+  :root {
+    --sea1: #0d47a1;
+    --sea2: #00acc1;
+    --gold: #ffe066;
+    --white: #f0f8ff;
+    --dark: #050d1a;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--dark);
+    height: 100vh; width: 100vw;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: default;
+  }
+
+  /* ── SEA CANVAS ── */
+  #bg { position: fixed; inset: 0; z-index: 0; image-rendering: pixelated; }
+
+  /* ── OVERLAY sombre pour lisibilité ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 1;
+    background: linear-gradient(to bottom,
+      rgba(5,13,26,0.45) 0%,
+      rgba(5,13,26,0.15) 40%,
+      rgba(5,13,26,0.55) 100%);
+  }
+
+  /* ── CONTENU ── */
+  .screen {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 0;
+    user-select: none;
+  }
+
+  /* ── TITRE PIXEL ── */
+  .title-wrap {
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  .title {
+    font-size: clamp(38px, 10vw, 88px);
+    font-family: 'Courier New', monospace;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-shadow:
+      4px 4px 0 #b8860b,
+      8px 8px 0 rgba(0,0,0,0.6);
+    animation: titleBob 3s ease-in-out infinite;
+    image-rendering: pixelated;
+  }
+
+  .title span {
+    display: inline-block;
+    animation: letterWave 2.5s ease-in-out infinite;
+  }
+  .title span:nth-child(1)  { animation-delay: 0.0s; }
+  .title span:nth-child(2)  { animation-delay: 0.07s; }
+  .title span:nth-child(3)  { animation-delay: 0.14s; }
+  .title span:nth-child(4)  { animation-delay: 0.21s; }
+  .title span:nth-child(5)  { animation-delay: 0.28s; }
+  .title span:nth-child(6)  { animation-delay: 0.35s; }
+  .title span:nth-child(7)  { animation-delay: 0.42s; }
+  .title span:nth-child(8)  { animation-delay: 0.49s; }
+  .title span:nth-child(9)  { animation-delay: 0.56s; }
+  .title span:nth-child(10) { animation-delay: 0.63s; }
+  .title span:nth-child(11) { animation-delay: 0.70s; }
+  .title span:nth-child(12) { animation-delay: 0.77s; }
+
+  @keyframes letterWave {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  .subtitle {
+    font-size: clamp(11px, 2.5vw, 16px);
+    color: rgba(180,230,255,0.8);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 2px;
+    margin-bottom: 32px;
+    animation: fadeIn 1.2s ease 0.5s both;
+  }
+
+  /* ── BATEAU PIXEL ART ── */
+  .boat-art {
+    font-size: 64px;
+    line-height: 1;
+    margin-bottom: 36px;
+    animation: boatFloat 4s ease-in-out infinite;
+    filter: drop-shadow(0 8px 16px rgba(0,150,220,0.4));
+  }
+  @keyframes boatFloat {
+    0%,100% { transform: translateY(0) rotate(-1deg); }
+    50%      { transform: translateY(-10px) rotate(1deg); }
+  }
+
+  /* ── BOUTON JOUER ── */
+  .btn-play {
+    display: block;
+    padding: 18px 56px;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(16px, 4vw, 22px);
+    font-weight: 900;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--dark);
+    background: var(--gold);
+    border: 4px solid #b8860b;
+    box-shadow: 6px 6px 0 #7a5800, 0 0 32px rgba(255,224,102,0.35);
+    cursor: pointer;
+    transition: transform 0.08s, box-shadow 0.08s;
+    animation: fadeIn 1s ease 0.9s both;
+    image-rendering: pixelated;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-play::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.12);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+  }
+  .btn-play:hover::before { transform: translateX(0); }
+  .btn-play:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 8px 8px 0 #7a5800, 0 0 48px rgba(255,224,102,0.5);
+  }
+  .btn-play:active {
+    transform: translate(4px, 4px);
+    box-shadow: 2px 2px 0 #7a5800;
+  }
+
+  /* ── CONTROLES HINT ── */
+  .controls {
+    margin-top: 32px;
+    display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+    animation: fadeIn 1s ease 1.3s both;
+  }
+  .ctrl {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 8px 14px;
+    font-size: 11px;
+    color: rgba(180,220,255,0.75);
+    letter-spacing: 1px;
+    text-align: center;
+    line-height: 1.7;
+  }
+  .ctrl strong {
+    display: block;
+    color: var(--gold);
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+
+  /* ── POISSONS DÉCO ── */
+  .fish-deco {
+    position: fixed; z-index: 2;
+    font-size: 28px;
+    animation: fishSwim linear infinite;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  @keyframes fishSwim {
+    0%   { transform: translateX(110vw) scaleX(1); }
+    49%  { transform: translateX(-15vw) scaleX(1); }
+    50%  { transform: translateX(-15vw) scaleX(-1); }
+    100% { transform: translateX(110vw) scaleX(-1); }
+  }
+
+  /* ── VERSION ── */
+  .version {
+    position: fixed; bottom: 12px; right: 16px;
+    font-size: 10px; color: rgba(255,255,255,0.25);
+    letter-spacing: 2px; z-index: 10;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn {
+    from { opacity:0; transform: translateY(14px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  @keyframes titleBob {
+    0%,100% { filter: drop-shadow(0 4px 12px rgba(255,200,0,0.4)); }
+    50%      { filter: drop-shadow(0 8px 24px rgba(255,200,0,0.7)); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .controls { gap: 10px; }
+    .ctrl { padding: 6px 10px; font-size: 10px; }
+    .boat-art { font-size: 48px; margin-bottom: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div class="overlay"></div>
+
+<!-- Poissons déco flottants -->
+<div class="fish-deco" style="top:18%; animation-duration:18s; animation-delay:0s; font-size:22px;">🐟</div>
+<div class="fish-deco" style="top:62%; animation-duration:24s; animation-delay:-8s; font-size:32px;">🐡</div>
+<div class="fish-deco" style="top:38%; animation-duration:20s; animation-delay:-14s; font-size:18px;">🐠</div>
+<div class="fish-deco" style="top:80%; animation-duration:16s; animation-delay:-4s; font-size:26px;">🦈</div>
+<div class="fish-deco" style="top:50%; animation-duration:28s; animation-delay:-20s; font-size:20px;">🐟</div>
+
+<div class="screen">
+
+  <!-- Titre -->
+  <div class="title-wrap">
+    <div class="title">
+      <span>F</span><span>I</span><span>C</span><span>H</span><span>I</span><span></span><span>N</span><span>G</span>&nbsp;<span>T</span><span>I</span><span>M</span><span>E</span>
+    </div>
+  </div>
+  <div class="subtitle">🎣 Un jeu de pêche relaxant 🌊</div>
+
+  <!-- Bateau pixel -->
+  <div class="boat-art">⛵</div>
+
+  <!-- Bouton jouer -->
+  <a class="btn-play" href="fishing-game.html">▶ &nbsp;JOUER</a>
+
+  <!-- Hints contrôles -->
+  <div class="controls">
+    <div class="ctrl"><strong>↑↓←→</strong>Naviguer<br>le bateau</div>
+    <div class="ctrl"><strong>👆/🖱️</strong>Viser<br>avec la souris<br>ou le doigt</div>
+    <div class="ctrl"><strong>🎣</strong>Lancer/enlever<br>l'hameçon</div>
+    <div class="ctrl"><strong>▲</strong>Rembobiner<br>la ligne</div>
+  </div>
+
+</div>
+
+<div class="version">v1.0 — FICHING TIME</div>
+
+<script>
+// ── Mer animée en arrière-plan ──
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let W, H, tiles = [];
+const TILE = 32;
+const CA = ['#1565c0','#0d47a1','#1976d2','#0a4a8c'];
+const CB = ['#00acc1','#00bcd4','#0097a7','#26c6da'];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  tiles = [];
+  for (let r = 0; r < Math.ceil(H/TILE)+2; r++)
+    for (let c = 0; c < Math.ceil(W/TILE)+2; c++)
+      tiles.push({
+        x: c*TILE-TILE, y: r*TILE-TILE,
+        colA: CA[Math.floor(Math.random()*CA.length)],
+        colB: CB[Math.floor(Math.random()*CB.length)],
+        t: Math.random()*Math.PI*2,
+        speed: 0.3+Math.random()*0.5
+      });
+}
+resize();
+window.addEventListener('resize', resize);
+
+let last = 0;
+function loop(ts) {
+  const dt = Math.min((ts-last)/1000, 0.05); last = ts;
+  for (const t of tiles) {
+    t.t += dt*t.speed;
+    ctx.fillStyle = Math.sin(t.t) > 0 ? t.colA : t.colB;
+    ctx.fillRect(t.x, t.y, TILE, TILE);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(ts => { last=ts; loop(ts); });
+</script>
+</body>
+</html>
